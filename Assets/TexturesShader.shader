@@ -69,13 +69,15 @@ Shader "Custom/Textured"
             float4 Frag(const Varyings input) : SV_TARGET
             {
                 
-                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv * _MainTex_ST.xy* _SinTime.x +_MainTex_ST.zw);
+                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv * _MainTex_ST.xy  +_MainTex_ST.zw* _SinTime.x);
             }
        
             
             ENDHLSL
 
         }
+
+
 
 Pass
 {
