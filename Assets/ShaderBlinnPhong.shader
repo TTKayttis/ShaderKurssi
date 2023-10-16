@@ -3,25 +3,14 @@ Shader "Custom/ShaderBlinnPhong"
     Properties
     {
         _Color("Color", Color) = (1,1,1,1)
-         _Shine("Shine", float) = 1
-        
+         _Shine("Shine", Range(1, 512)) = 1
     }
     SubShader
     {
-        Tags
-        {
-            "RenderType"="Opaque" "RenderPipeline" = "UniversalPipeline" "Queue" = "Geometry"
-        }
-
-
-
+        Tags { "RenderType"="Opaque" "RenderPipeline" = "UniversalPipeline" "Queue" = "Geometry" }
+        
         Pass
         {
-            Name "customPass"
-            Tags
-            {
-                "LightMode" = "UniversalForward"
-            }
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
@@ -37,31 +26,28 @@ Shader "Custom/ShaderBlinnPhong"
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION;
-                float3 positionWS : TEXCOORD0;
-                float3 normalWS : NORMAL;
+                float3 normalWS : TEXCOORD0;
+                 float3 positionWS : TEXCOORD1;
             };
             CBUFFER_START(UnityPerMaterial)
            float4 _Color;
-            float4 _Shine;
+            float _Shine;
           CBUFFER_END
             
             Varyings Vert(const Attributes input)
             {
                 Varyings output;
-                
                 output.positionHCS = TransformObjectToHClip(input.positionOS);
                 output.positionWS = TransformObjectToWorld(input.positionOS);
-                output.normalWS = TransformObjectToWorld(input.normalOS);
-                
-                
+                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 return output;
             }
-   float4 BlinnPhong(Varyings varyings)
+   float4 BlinnPhong(const Varyings varyings)
           {
                 Light light = GetMainLight();
-             half3 ambient = light.color * 0.1f;
-                half3 diffuse = saturate(dot(varyings.normalWS, light.direction)) * light.color;
-              //half3 viewDir = GetWorldSpaceNormalizeViewDir(varyings.positionWS);
+             float3 ambient = light.color * 0.1f;
+                float3 diffuse = saturate(dot(varyings.normalWS, light.direction)) * light.color;
+              float3 viewDir = GetWorldSpaceNormalizeViewDir(varyings.positionWS);
              float3 halfVec = normalize(light.direction + GetWorldSpaceNormalizeViewDir(varyings.positionWS));
               float3 spec = pow(saturate(dot(varyings.normalWS,halfVec)),_Shine) * light.color;
               return float4((ambient + diffuse + spec) * _Color,1);
@@ -70,7 +56,7 @@ Shader "Custom/ShaderBlinnPhong"
 
               
           }
-            half4 Frag(const Varyings input) : SV_TARGET
+            float4 Frag(const Varyings input) : SV_TARGET
             {
                 //return half4(_Shine);
                 return BlinnPhong(input);
@@ -80,5 +66,46 @@ Shader "Custom/ShaderBlinnPhong"
             ENDHLSL
 
         }
+
+Pass
+{
+    Name "Normals"
+    Tags { "LightMode" = "DepthNormalsOnly" }
+    
+    Cull Back
+    ZTest LEqual
+    ZWrite On
+    
+    HLSLPROGRAM
+    
+    #pragma vertex DepthNormalsVert
+    #pragma fragment DepthNormalsFrag
+
+    #include "Shaders/Common/DepthNormalsOnly.hlsl"
+    
+    ENDHLSL
+}
+
+Pass
+{
+    Name "Depth"
+    Tags { "LightMode" = "DepthOnly" }
+    
+    Cull Back
+    ZTest LEqual
+    ZWrite On
+    ColorMask R
+    
+    HLSLPROGRAM
+    
+    #pragma vertex DepthVert
+    #pragma fragment DepthFrag
+
+    
+     #include "Shaders/Common/DepthOnly.hlsl"
+
+     ENDHLSL
+
+}
     }
 }
