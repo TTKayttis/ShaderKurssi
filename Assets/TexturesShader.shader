@@ -5,6 +5,7 @@ Shader "Custom/Textured"
         _Color("Color", Color) = (1,1,1,1)
          _Shine("Shine", Range(1, 512)) = 1
         _MainTex("Main texture", 2D) = "white" {}
+         _SecondaryTex("Secondary texture", 2D) = "white" {}
     }
     SubShader
     {
@@ -34,8 +35,9 @@ Shader "Custom/Textured"
             };
 
             TEXTURE2D(_MainTex);
+             TEXTURE2D(_SecondaryTex);
             SAMPLER(sampler_MainTex);
-          
+           SAMPLER(sampler_SecondaryTex);
             
             CBUFFER_START(UnityPerMaterial)
            float4 _Color;
@@ -68,8 +70,10 @@ Shader "Custom/Textured"
           }
             float4 Frag(const Varyings input) : SV_TARGET
             {
-                
-                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv * _MainTex_ST.xy  +_MainTex_ST.zw* _SinTime.x);
+                float4 mainTex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv * _MainTex_ST.xy  +_MainTex_ST.zw* _SinTime.x);
+                 float4 secTex = SAMPLE_TEXTURE2D(_SecondaryTex, sampler_SecondaryTex, input.uv * _MainTex_ST.xy  +_MainTex_ST.zw* _SinTime.x);
+
+                return  lerp(mainTex , secTex ,0.5f);
             }
        
             
