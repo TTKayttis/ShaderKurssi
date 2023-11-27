@@ -1,0 +1,27 @@
+float Amplitude;
+uint Size;
+float Frequency;
+float Time;
+float2 Direction;
+RWStructuredBuffer<float4> Positions;
+
+
+
+float SampleFunction(float2 pos)
+{
+    pos = pos * Frequency * Direction + Time;
+return Amplitude * sin(pos.x + pos.y);
+    
+    
+}
+
+#pragma kernel Simulate
+
+[numthreads(8,8,1)]
+void Simulate (uint3 id : SV_DispatchThreadID)
+{
+   const uint idx = id.x * Size + id.y;
+    const float3 currentPos = Positions[idx].xyz;
+    const float2 funcPos = float2(id.x / (float)Size, id.y / (float)Size);
+    Positions[idx] = float4(currentPos.x,SampleFunction((funcPos)), currentPos.z,0);
+}
